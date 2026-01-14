@@ -1,0 +1,29 @@
+menu "Example Configuration"
+    config WIFI_SSID
+        string "WiFi SSID"
+        default "odn2g"
+        help
+            The SSID (name) of the Wi-Fi network to connect to.
+
+    config WIFI_PASSWORD
+        string "WiFi Password"
+        default "!happy12006"
+        help
+            The password of the Wi-Fi network.
+            
+    config ESP_DPP_LISTEN_CHANNEL_LIST
+        string "DPP Listen channel list"
+        default "6"
+        help
+            DPP Bootstrapping listen channels separated by commas.
+
+    config ESP_DPP_BOOTSTRAPPING_KEY
+        string "Bootstrapping key"
+        help
+            64 hex digits (or 32 bytes) of raw private key for DPP Bootstrapping.
+
+    config ESP_DPP_DEVICE_INFO
+        string "Additional Device Info"
+        help
+            Additional ancillary information to be included in QR Code.
+endmenu

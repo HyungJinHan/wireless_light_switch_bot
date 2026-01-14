@@ -1,0 +1,28 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "gdbtarget",
+      "request": "attach",
+      "name": "Eclipse CDT GDB Adapter"
+    },
+    {
+      "type": "espidf",
+      "name": "Launch",
+      "request": "launch"
+    },
+    {
+      "name": "C/C++: gcc 활성 파일 빌드 및 디버그",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${fileDirname}/${fileBasenameNoExtension}",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${fileDirname}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "lldb",
+      "preLaunchTask": "C/C++: gcc 활성 파일 빌드"
+    }
+  ]
+}
