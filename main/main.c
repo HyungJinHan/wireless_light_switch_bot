@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "driver/ledc.h"
 #include "esp_event.h"
 #include "esp_http_server.h"
@@ -11,7 +12,7 @@
 #include "freertos/task.h"
 #include "nvs_flash.h"
 
-static const char *TAG = "SERVO_WEB_CONTROL";
+static const char* TAG = "SERVO_WEB_CONTROL";
 
 // 설정
 #define SERVO_PIN 14
@@ -36,13 +37,14 @@ void configure_servo() {
                                     .clk_cfg = LEDC_AUTO_CLK};
   ledc_timer_config(&ledc_timer);
 
-  ledc_channel_config_t ledc_channel = {.speed_mode = LEDC_LOW_SPEED_MODE,
-                                        .channel = LEDC_CHANNEL_0,
-                                        .timer_sel = LEDC_TIMER_0,
-                                        .intr_type = LEDC_INTR_DISABLE,
-                                        .gpio_num = SERVO_PIN,
-                                        .duty = SERVO_45_DEGREE_DUTY,  // 초기 위치
-                                        .hpoint = 0};
+  ledc_channel_config_t ledc_channel = {
+      .speed_mode = LEDC_LOW_SPEED_MODE,
+      .channel = LEDC_CHANNEL_0,
+      .timer_sel = LEDC_TIMER_0,
+      .intr_type = LEDC_INTR_DISABLE,
+      .gpio_num = SERVO_PIN,
+      .duty = SERVO_45_DEGREE_DUTY,  // 초기 위치
+      .hpoint = 0};
   ledc_channel_config(&ledc_channel);
   is_servo_active = true;
 }
@@ -59,31 +61,22 @@ void set_servo_angle(uint32_t duty) {
 // 웹 페이지 HTML
 extern const char _binary_index_html_start[];
 extern const char _binary_index_html_end[];
+extern const char _binary_style_css_start[];
+extern const char _binary_style_css_end[];
 
-// ON 버튼 핸들러
-esp_err_t on_handler(httpd_req_t *req) {
-  ESP_LOGI(TAG, "Servo ON");
-  is_on = true;
-  is_servo_active = true;  // 서보가 활성 상태임을 표시
+// 토글 핸들러
+esp_err_t toggle_handler(httpd_req_t* req) {
+  is_on = !is_on;
+  ESP_LOGI(TAG, "Servo %s", is_on ? "ON" : "OFF");
+  is_servo_active = true;
   last_motor_activity_time = esp_timer_get_time();
-  set_servo_angle(SERVO_MIN_DUTY);
-  httpd_resp_send(req, "OK", HTTPD_RESP_USE_STRLEN);
-  return ESP_OK;
-}
-
-// OFF 버튼 핸들러
-esp_err_t off_handler(httpd_req_t *req) {
-  ESP_LOGI(TAG, "Servo OFF");
-  is_on = false;
-  is_servo_active = true;  // 서보가 활성 상태임을 표시
-  last_motor_activity_time = esp_timer_get_time();
-  set_servo_angle(SERVO_45_DEGREE_DUTY);
+  set_servo_angle(is_on ? SERVO_MIN_DUTY : SERVO_45_DEGREE_DUTY);
   httpd_resp_send(req, "OK", HTTPD_RESP_USE_STRLEN);
   return ESP_OK;
 }
 
 // 상태 핸들러
-esp_err_t status_handler(httpd_req_t *req) {
+esp_err_t status_handler(httpd_req_t* req) {
   char resp[64];
   sprintf(resp, "{\"status\": \"%s\"}", is_on ? "ON" : "OFF");
   httpd_resp_set_type(req, "application/json");
@@ -91,8 +84,16 @@ esp_err_t status_handler(httpd_req_t *req) {
   return ESP_OK;
 }
 
+// CSS 핸들러
+esp_err_t style_css_handler(httpd_req_t *req) {
+    const size_t css_size = (_binary_style_css_end - _binary_style_css_start);
+    httpd_resp_set_type(req, "text/css");
+    httpd_resp_send(req, _binary_style_css_start, css_size);
+    return ESP_OK;
+}
+
 // 메인 페이지 핸들러
-esp_err_t root_handler(httpd_req_t *req) {
+esp_err_t root_handler(httpd_req_t* req) {
   const size_t html_size = (_binary_index_html_end - _binary_index_html_start);
   httpd_resp_send(req, _binary_index_html_start, html_size);
   return ESP_OK;
@@ -111,11 +112,12 @@ void start_webserver() {
     httpd_uri_t root = {
         .uri = "/", .method = HTTP_GET, .handler = root_handler};
     httpd_register_uri_handler(server, &root);
-    httpd_uri_t on = {.uri = "/on", .method = HTTP_GET, .handler = on_handler};
-    httpd_register_uri_handler(server, &on);
-    httpd_uri_t off = {
-        .uri = "/off", .method = HTTP_GET, .handler = off_handler};
-    httpd_register_uri_handler(server, &off);
+    httpd_uri_t style_css = {
+        .uri = "/style.css", .method = HTTP_GET, .handler = style_css_handler};
+    httpd_register_uri_handler(server, &style_css);
+    httpd_uri_t toggle = {
+        .uri = "/toggle", .method = HTTP_GET, .handler = toggle_handler};
+    httpd_register_uri_handler(server, &toggle);
     httpd_uri_t status = {
         .uri = "/status", .method = HTTP_GET, .handler = status_handler};
     httpd_register_uri_handler(server, &status);
@@ -123,30 +125,31 @@ void start_webserver() {
 }
 
 // 와이파이 연결 이벤트 핸들러
-static void event_handler(void *arg, esp_event_base_t event_base,
-                          int32_t event_id, void *event_data) {
+static void event_handler(void* arg, esp_event_base_t event_base,
+                          int32_t event_id, void* event_data) {
   if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
     esp_wifi_connect();
   } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
-    ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
+    ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
     ESP_LOGI(TAG, "Got IP: " IPSTR, IP2STR(&event->ip_info.ip));
     start_webserver();
   }
 }
 
 // 서보 모터의 전력을 관리하는 태스크
-void servo_power_management_task(void *pvParameters) {
+void servo_power_management_task(void* pvParameters) {
   while (1) {
-    // 60초 동안 활동이 없으면 서보 모터 신호 차단
     // if (is_servo_active &&
-    //     (esp_timer_get_time() - last_motor_activity_time) > 60 * 1000 * 1000) {
-    //   ESP_LOGI(TAG, "Detaching servo motor due to inactivity to save power.");
-    //   ledc_stop(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);  // PWM 신호 중지
-    //   is_servo_active = false;
+    //     (esp_timer_get_time() - last_motor_activity_time) > 60 * 1000 * 1000)
+    //     {
+    //   ESP_LOGI(TAG, "Detaching servo motor due to inactivity to save
+    //   power."); ledc_stop(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);  // PWM
+    //   신호 중지 is_servo_active = false;
     // }
     // vTaskDelay(pdMS_TO_TICKS(1000));  // 1초마다 체크
 
-    if (is_servo_active) {
+    if (is_servo_active &&
+        (esp_timer_get_time() - last_motor_activity_time) > 2 * 1000 * 1000) {
       ESP_LOGI(TAG, "Detaching servo motor due to inactivity to save power.");
       ledc_stop(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);  // PWM 신호 중지
       is_servo_active = false;

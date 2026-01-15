@@ -1,17 +1,39 @@
 <html>
+  <head>
+    <title>Light Switch Bot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" type="text/css" href="style.css" />
+  </head>
   <body>
-    <h1>ESP32 Servo Control</h1>
-    <h2>Current Status: <span id="status">Loading...</span></h2>
-    <button onclick="fetch('/on').then(updateStatus)">SWITCH ON</button>
-    <button onclick="fetch('/off').then(updateStatus)">SWITCH OFF</button>
+    <div class="container">
+      <h1>Light Switch Bot</h1>
+      <h2>Current Status: <span id="status">Loading...</span></h2>
+
+      <label class="switch">
+        <input type="checkbox" id="toggle-checkbox" />
+        <span class="slider round"></span>
+      </label>
+    </div>
+
     <script>
+      const statusSpan = document.getElementById("status");
+      const toggleCheckbox = document.getElementById("toggle-checkbox");
+
       function updateStatus() {
-        fetch('/status')
-          .then(response => response.json())
-          .then(data => {
-            document.getElementById('status').innerText = data.status;
+        fetch("/status")
+          .then((response) => response.json())
+          .then((data) => {
+            statusSpan.innerText = data.status;
+            toggleCheckbox.checked = data.status === "ON";
           });
       }
+
+      function toggleSwitch() {
+        fetch("/toggle").then(updateStatus);
+      }
+
+      toggleCheckbox.addEventListener("change", toggleSwitch);
+
       // Fetch status on page load
       updateStatus();
     </script>
