@@ -1,7 +1,19 @@
 <html>
   <body>
     <h1>ESP32 Servo Control</h1>
-    <button onclick="fetch('/on')">SWITCH ON</button
-    ><button onclick="fetch('/off')">SWITCH OFF</button>
+    <h2>Current Status: <span id="status">Loading...</span></h2>
+    <button onclick="fetch('/on').then(updateStatus)">SWITCH ON</button>
+    <button onclick="fetch('/off').then(updateStatus)">SWITCH OFF</button>
+    <script>
+      function updateStatus() {
+        fetch('/status')
+          .then(response => response.json())
+          .then(data => {
+            document.getElementById('status').innerText = data.status;
+          });
+      }
+      // Fetch status on page load
+      updateStatus();
+    </script>
   </body>
 </html>

@@ -5,7 +5,6 @@
 #include "esp_event.h"
 #include "esp_http_server.h"
 #include "esp_log.h"
-#include "esp_sleep.h"
 #include "esp_timer.h"
 #include "esp_wifi.h"
 #include "freertos/FreeRTOS.h"
@@ -26,6 +25,7 @@ static const char *TAG = "SERVO_WEB_CONTROL";
 
 static int64_t last_motor_activity_time = 0;
 static bool is_servo_active = true;
+static bool is_on = false;
 
 // 서보 모터 PWM 설정
 void configure_servo() {
@@ -63,6 +63,7 @@ extern const char _binary_index_html_end[];
 // ON 버튼 핸들러
 esp_err_t on_handler(httpd_req_t *req) {
   ESP_LOGI(TAG, "Servo ON");
+  is_on = true;
   is_servo_active = true;  // 서보가 활성 상태임을 표시
   last_motor_activity_time = esp_timer_get_time();
   set_servo_angle(SERVO_MIN_DUTY);
@@ -73,10 +74,20 @@ esp_err_t on_handler(httpd_req_t *req) {
 // OFF 버튼 핸들러
 esp_err_t off_handler(httpd_req_t *req) {
   ESP_LOGI(TAG, "Servo OFF");
+  is_on = false;
   is_servo_active = true;  // 서보가 활성 상태임을 표시
   last_motor_activity_time = esp_timer_get_time();
   set_servo_angle(SERVO_45_DEGREE_DUTY);
   httpd_resp_send(req, "OK", HTTPD_RESP_USE_STRLEN);
+  return ESP_OK;
+}
+
+// 상태 핸들러
+esp_err_t status_handler(httpd_req_t *req) {
+  char resp[64];
+  sprintf(resp, "{\"status\": \"%s\"}", is_on ? "ON" : "OFF");
+  httpd_resp_set_type(req, "application/json");
+  httpd_resp_send(req, resp, strlen(resp));
   return ESP_OK;
 }
 
@@ -105,6 +116,9 @@ void start_webserver() {
     httpd_uri_t off = {
         .uri = "/off", .method = HTTP_GET, .handler = off_handler};
     httpd_register_uri_handler(server, &off);
+    httpd_uri_t status = {
+        .uri = "/status", .method = HTTP_GET, .handler = status_handler};
+    httpd_register_uri_handler(server, &status);
   }
 }
 
@@ -124,8 +138,15 @@ static void event_handler(void *arg, esp_event_base_t event_base,
 void servo_power_management_task(void *pvParameters) {
   while (1) {
     // 60초 동안 활동이 없으면 서보 모터 신호 차단
-    if (is_servo_active &&
-        (esp_timer_get_time() - last_motor_activity_time) > 60 * 1000 * 1000) {
+    // if (is_servo_active &&
+    //     (esp_timer_get_time() - last_motor_activity_time) > 60 * 1000 * 1000) {
+    //   ESP_LOGI(TAG, "Detaching servo motor due to inactivity to save power.");
+    //   ledc_stop(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);  // PWM 신호 중지
+    //   is_servo_active = false;
+    // }
+    // vTaskDelay(pdMS_TO_TICKS(1000));  // 1초마다 체크
+
+    if (is_servo_active) {
       ESP_LOGI(TAG, "Detaching servo motor due to inactivity to save power.");
       ledc_stop(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);  // PWM 신호 중지
       is_servo_active = false;
