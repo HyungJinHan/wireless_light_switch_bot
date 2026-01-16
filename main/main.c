@@ -19,8 +19,8 @@ static const char* TAG = "SERVO_WEB_CONTROL";
 
 // SG90 서보 설정 (50Hz, 13-bit 해상도 기준)
 // 0도: 약 164 (0.5ms), 90도: 약 410 (1.25ms), 180도: 약 655 (2.0ms)
-#define SERVO_MIN_DUTY 205  // 0.5ms (0도)
-#define SERVO_MAX_DUTY 819  // 2.0ms (180도)
+#define SERVO_MIN_DUTY 180
+#define SERVO_MAX_DUTY 819
 #define SERVO_45_DEGREE_DUTY \
   SERVO_MIN_DUTY + (70 * (SERVO_MAX_DUTY - SERVO_MIN_DUTY) / 180)
 
@@ -85,11 +85,11 @@ esp_err_t status_handler(httpd_req_t* req) {
 }
 
 // CSS 핸들러
-esp_err_t style_css_handler(httpd_req_t *req) {
-    const size_t css_size = (_binary_style_css_end - _binary_style_css_start);
-    httpd_resp_set_type(req, "text/css");
-    httpd_resp_send(req, _binary_style_css_start, css_size);
-    return ESP_OK;
+esp_err_t style_css_handler(httpd_req_t* req) {
+  const size_t css_size = (_binary_style_css_end - _binary_style_css_start);
+  httpd_resp_set_type(req, "text/css");
+  httpd_resp_send(req, _binary_style_css_start, css_size);
+  return ESP_OK;
 }
 
 // 메인 페이지 핸들러
