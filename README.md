@@ -22,6 +22,36 @@
 
 - [ESP-IDF (Espressif IoT Development Framework)](https://github.com/espressif/esp-idf)
 
+## 개발 환경 설정 (Windows)
+
+이 프로젝트는 ESP-IDF를 기반으로 하며, Windows 환경에서 개발할 수 있는 몇 가지 방법이 있습니다. 가장 권장되는 방법은 Visual Studio Code의 Dev Container를 활용하는 것입니다.
+
+### 권장 방법: Dev Container 사용
+
+이 방법은 Visual Studio Code와 Docker를 사용하여 프로젝트에 필요한 모든 개발 도구(ESP-IDF, 툴체인 등)가 미리 설정된 격리된 개발 환경을 제공합니다. 이는 로컬 시스템에 복잡한 설정을 할 필요 없이 빠르고 일관된 개발 환경을 구축할 수 있는 가장 쉬운 방법입니다.
+
+**사전 준비물:**
+1.  **Visual Studio Code**: 코드 에디터입니다.
+2.  **Docker Desktop**: 컨테이너 가상화 플랫폼입니다. 설치되어 있고 실행 중인지 확인하세요.
+3.  **Dev Containers 확장 (VS Code)**: VS Code를 열고 확장 뷰(Ctrl+Shift+X)에서 `ms-vscode-remote.remote-containers`를 검색하여 설치합니다.
+
+**설정 단계:**
+1.  프로젝트 폴더(`wireless_light_switch_bot`)를 Visual Studio Code에서 엽니다.
+2.  일반적으로 VS Code 오른쪽 하단에 "Folder contains a Dev Container configuration file. Reopen in Container..."라는 알림이 나타납니다.
+3.  **"Reopen in Container"** 버튼을 클릭합니다.
+
+VS Code는 `.devcontainer` 디렉토리에 정의된 Docker 이미지를 빌드하고(첫 실행 시 몇 분 소요될 수 있음) 해당 컨테이너 내에서 프로젝트를 엽니다. 컨테이너 내부의 터미널에서는 `idf.py build`와 같은 ESP-IDF 명령어를 즉시 사용할 수 있습니다.
+
+### 대안 방법: ESP-IDF Tools Installer 사용
+
+만약 툴체인을 Windows 시스템에 직접 설치하는 것을 선호한다면, Espressif에서 제공하는 공식 ESP-IDF Tools Installer를 사용할 수 있습니다.
+
+1.  **설치 프로그램 다운로드**: [ESP-IDF Tools Installer 페이지](https://dl.espressif.com/dl/esp-idf-tools-setup-online-latest.exe)에서 최신 버전을 다운로드합니다.
+2.  **설치 프로그램 실행**: 화면의 지시에 따라 필요한 툴체인, 명령줄 환경(MSYS2), ESP-IDF 복사본 등을 설치합니다.
+3.  **명령 프롬프트 사용**: 설치가 완료되면 바탕화면에 생성된 "ESP-IDF Command Prompt" 바로가기를 사용합니다. 이 프롬프트에서 프로젝트 디렉토리로 이동한 후 `idf.py build`와 같은 명령어를 실행할 수 있습니다.
+
+**참고**: Dev Container 방법이 더 간단하고 로컬 시스템 구성 문제 발생 가능성이 적으므로, 이 방법을 먼저 시도해 보시는 것을 권장합니다.
+
 ## 환경 변수 설정 (Environment Variable Configuration)
 
 이 프로젝트는 Wi-Fi 연결을 위해 SSID 및 비밀번호를 환경 변수로 설정해야 합니다.

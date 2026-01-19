@@ -21,20 +21,45 @@
 
       function updateStatus() {
         fetch("/status")
-          .then((response) => response.json())
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+          })
           .then((data) => {
             statusSpan.innerText = data.status;
             toggleCheckbox.checked = data.status === "ON";
+          })
+          .catch((error) => {
+            console.error("Could not fetch status:", error);
+            statusSpan.innerText = "연결 실패";
+            toggleCheckbox.checked = false;
           });
       }
 
       function toggleSwitch() {
-        fetch("/toggle").then(updateStatus);
+        // 'change' 이벤트로 인해 체크박스 상태는 이미 낙관적으로 변경되었습니다.
+        // 따라서, `!toggleCheckbox.checked`는 클릭 이전의 원래 상태를 나타냅니다.
+        const originalCheckedState = !toggleCheckbox.checked;
+
+        fetch("/toggle")
+          .then(updateStatus) // 성공 시, 서버의 실제 상태와 UI를 다시 동기화합니다.
+          .catch((error) => {
+            console.error("Toggle command failed:", error);
+            alert(
+              "스위치 상태 변경에 실패했습니다. 연결을 확인 후 다시 시도해주세요."
+            );
+
+            // 통신 실패 시, UI를 원래 상태로 되돌려 사용자가 불일치를 인지하도록 합니다.
+            toggleCheckbox.checked = originalCheckedState;
+            statusSpan.innerText = originalCheckedState ? "ON" : "OFF";
+          });
       }
 
       toggleCheckbox.addEventListener("change", toggleSwitch);
 
-      // Fetch status on page load
+      // 페이지 로드 시 상태 가져오기
       updateStatus();
     </script>
   </body>

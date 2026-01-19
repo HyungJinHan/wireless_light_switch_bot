@@ -43,7 +43,7 @@ void configure_servo() {
       .timer_sel = LEDC_TIMER_0,
       .intr_type = LEDC_INTR_DISABLE,
       .gpio_num = SERVO_PIN,
-      .duty = SERVO_45_DEGREE_DUTY,  // 초기 위치
+      .duty = SERVO_45_DEGREE_DUTY,  // 초기 위치 (OFF 상태)
       .hpoint = 0};
   ledc_channel_config(&ledc_channel);
   is_servo_active = true;
@@ -129,6 +129,20 @@ static void event_handler(void* arg, esp_event_base_t event_base,
                           int32_t event_id, void* event_data) {
   if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
     esp_wifi_connect();
+  } else if (event_base == WIFI_EVENT &&
+             event_id == WIFI_EVENT_STA_DISCONNECTED) {
+    ESP_LOGI(TAG, "Wi-Fi disconnected, trying to reconnect...");
+    if (server) {
+      httpd_stop(server);
+      server = NULL;
+    }
+    // 추가: Wi-Fi가 끊겼을 때 ON 상태였으면 OFF로 변경
+    if (is_on) {
+      ESP_LOGI(TAG, "Servo was ON, setting to OFF due to Wi-Fi disconnection.");
+      is_on = false;
+      set_servo_angle(SERVO_45_DEGREE_DUTY); // OFF 상태로 변경
+    }
+    esp_wifi_connect();
   } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
     ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
     ESP_LOGI(TAG, "Got IP: " IPSTR, IP2STR(&event->ip_info.ip));
@@ -139,15 +153,6 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 // 서보 모터의 전력을 관리하는 태스크
 void servo_power_management_task(void* pvParameters) {
   while (1) {
-    // if (is_servo_active &&
-    //     (esp_timer_get_time() - last_motor_activity_time) > 60 * 1000 * 1000)
-    //     {
-    //   ESP_LOGI(TAG, "Detaching servo motor due to inactivity to save
-    //   power."); ledc_stop(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);  // PWM
-    //   신호 중지 is_servo_active = false;
-    // }
-    // vTaskDelay(pdMS_TO_TICKS(1000));  // 1초마다 체크
-
     if (is_servo_active &&
         (esp_timer_get_time() - last_motor_activity_time) > 2 * 1000 * 1000) {
       ESP_LOGI(TAG, "Detaching servo motor due to inactivity to save power.");
