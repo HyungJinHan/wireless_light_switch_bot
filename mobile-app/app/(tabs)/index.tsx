@@ -1,4 +1,4 @@
-import { HelloWave } from "@/components/hello-wave";
+import { LightBlink } from "@/components/light-blink";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -72,7 +72,7 @@ export default function App() {
       }}>
       <View style={styles.container}>
         <View style={styles.card}>
-          <HelloWave />
+          <LightBlink />
 
           <Text style={styles.title}>Light Switch Controller</Text>
 
