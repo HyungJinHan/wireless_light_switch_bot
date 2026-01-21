@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "expo-project",
-    "slug": "expo-project",
+    "name": "light-switch-bot-controller",
+    "slug": "light-switch-bot-controller",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "expo-project",
+    "scheme": "light-switch-bot-controller",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.hyungjinhan.expoproject"
+      "bundleIdentifier": "com.hyungjinhan.lightswitchbotcontroller"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +21,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.hyungjinhan.expoproject"
+      "package": "com.hyungjinhan.lightswitchbotcontroller"
     },
     "web": {
       "output": "static",
@@ -40,7 +40,8 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      ["expo-build-properties", { "android": { "usesCleartextTraffic": true } }]
     ],
     "experiments": {
       "typedRoutes": true,
@@ -49,12 +50,12 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "85441fa1-c386-4cb2-a2a6-d39852d53f38"
+        "projectId": "d0fe1691-a042-4caa-857f-0ac2856f8938"
       }
     },
     "owner": "hyungjinhan",
     "updates": {
-      "url": "https://u.expo.dev/85441fa1-c386-4cb2-a2a6-d39852d53f38"
+      "url": "https://u.expo.dev/d0fe1691-a042-4caa-857f-0ac2856f8938"
     },
     "runtimeVersion": {
       "policy": "appVersion"

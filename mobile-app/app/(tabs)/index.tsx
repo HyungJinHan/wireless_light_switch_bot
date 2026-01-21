@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/theme";
+import { HelloWave } from "@/components/hello-wave";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -68,11 +68,13 @@ export default function App() {
     <SafeAreaView
       style={{
         ...styles.safeArea,
-        backgroundColor: Colors[colorScheme ?? "dark"].tint,
+        backgroundColor: colorScheme === "dark" ? "#2e2e2e" : "#f0f2f5",
       }}>
       <View style={styles.container}>
         <View style={styles.card}>
-          <Text style={styles.title}>Light Switch Bot</Text>
+          <HelloWave />
+
+          <Text style={styles.title}>Light Switch Controller</Text>
 
           <View style={styles.statusContainer}>
             <Text style={styles.statusLabel}>Current Status:</Text>
@@ -129,16 +131,17 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: "#1c1e21",
+    marginTop: 20,
     marginBottom: 20,
   },
   statusContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 10,
   },
   statusLabel: { fontSize: 18, color: "#606770", marginRight: 8 },
   statusValue: { fontSize: 18, fontWeight: "600" },
   onText: { color: "#3678f4" },
   offText: { color: "#f44336" },
-  switchWrapper: { padding: 10 },
+  switchWrapper: { margin: 5 },
 });

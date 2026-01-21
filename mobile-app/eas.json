@@ -24,6 +24,7 @@
       "distribution": "internal",
       "channel": "main",
       "android": {
+        "buildType": "apk",
         "image": "latest"
       },
       "ios": {
