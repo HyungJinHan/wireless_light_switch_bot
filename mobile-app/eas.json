@@ -9,37 +9,37 @@
       "distribution": "internal",
       "android": {
         "image": "latest"
-      },
-      "ios": {
-        "image": "latest"
       }
+      // "ios": {
+      //   "image": "latest"
+      // }
     },
     "development-simulator": {
-      "extends": "development",
-      "ios": {
-        "simulator": true
-      }
+      "extends": "development"
+      // "ios": {
+      //   "simulator": true
+      // }
     },
     "preview": {
       "distribution": "internal",
-      "channel": "main",
+      "channel": "preview",
       "android": {
         "buildType": "apk",
         "image": "latest"
-      },
-      "ios": {
-        "image": "latest"
       }
+      // "ios": {
+      //   "image": "latest"
+      // }
     },
     "production": {
       "channel": "production",
       "autoIncrement": true,
       "android": {
         "image": "latest"
-      },
-      "ios": {
-        "image": "latest"
       }
+      // "ios": {
+      //   "image": "latest"
+      // }
     }
   },
   "submit": {

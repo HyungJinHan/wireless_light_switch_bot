@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-export function HelloWave() {
+export function LightBlink() {
   const opacity = useSharedValue(0);
 
   useEffect(() => {
