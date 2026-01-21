@@ -1,5 +1,6 @@
 import { LightBlink } from "@/components/light-blink";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   ActivityIndicator,
   Alert,
@@ -59,10 +60,11 @@ export default function App() {
     }
   };
 
-  // 앱 실행 시 최초 1회 상태 확인
-  useEffect(() => {
-    fetchStatus();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchStatus();
+    }, [])
+  );
 
   return (
     <SafeAreaView
