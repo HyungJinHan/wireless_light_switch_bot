@@ -19,6 +19,10 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.hyungjinhan.lightswitchbotcontroller"
     },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
     "plugins": [
       "expo-router",
       [
