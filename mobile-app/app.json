@@ -8,10 +8,6 @@
     "scheme": "light-switch-bot-controller",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.hyungjinhan.lightswitchbotcontroller"
-    },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
