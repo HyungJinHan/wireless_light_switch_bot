@@ -12,16 +12,32 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import apiClient from "../../services/api";
+import apiClient from "../services/api";
+
+interface BatteryStatus {
+  level: number;
+  voltage: number;
+}
 
 export default function App() {
   const [isEnabled, setIsEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [statusText, setStatusText] = useState("Loading...");
+  const [batteryStatus, setBatteryStatus] = useState<BatteryStatus | null>(null);
+  const [batteryLoading, setBatteryLoading] = useState(true);
   const colorScheme = useColorScheme();
 
-  // 1. 서버로부터 현재 상태를 가져오는 함수
-  const fetchStatus = async () => {
+  const getBatteryTextColor = (level: number) => {
+    if (level > 50) {
+      return "green";
+    } else if (level >= 20) {
+      return "orange";
+    } else {
+      return "red";
+    }
+  };
+
+  const fetchSwitchStatus = async () => {
     try {
       const data = await apiClient.getStatus();
       setIsEnabled(data.status === "ON");
@@ -29,26 +45,39 @@ export default function App() {
     } catch (error) {
       console.error(error);
       setStatusText("연결 실패");
-    } finally {
-      setLoading(false);
     }
   };
+  
+  const fetchBatteryStatus = async () => {
+    try {
+        const data = await apiClient.getBatteryStatus();
+        setBatteryStatus(data);
+    } catch (err) {
+      console.error("Failed to fetch battery status:", err);
+      // Don't show an alert for battery, just log it.
+      setBatteryStatus(null);
+    }
+  }
 
-  // 2. 스위치를 토글할 때 실행되는 함수
+  const fetchAllData = async () => {
+    setLoading(true);
+    setBatteryLoading(true);
+    await Promise.all([fetchSwitchStatus(), fetchBatteryStatus()]);
+    setLoading(false);
+    setBatteryLoading(false);
+  }
+
   const toggleSwitch = async () => {
     const originalState = isEnabled;
-    // 낙관적 UI 업데이트
     setIsEnabled(!originalState);
     setStatusText(!originalState ? "ON" : "OFF");
 
     try {
       await apiClient.toggleSwitch();
-      // 서버 전송 성공 시 실제 상태 동기화
-      await fetchStatus();
+      await fetchSwitchStatus();
     } catch (error) {
       console.error(error);
       Alert.alert("오류", "스위치 상태 변경에 실패했습니다.");
-      // 실패 시 원래 상태로 복구
       setIsEnabled(originalState);
       setStatusText(originalState ? "ON" : "OFF");
     }
@@ -56,13 +85,12 @@ export default function App() {
 
   useFocusEffect(
     useCallback(() => {
-      fetchStatus();
+      fetchAllData();
     }, []),
   );
 
   const handleTouch = () => {
-    setLoading(true);
-    fetchStatus();
+    fetchAllData();
   };
 
   return (
@@ -76,10 +104,11 @@ export default function App() {
           <View style={styles.card}>
             <LightBlink />
 
-            <Text style={styles.title}>Light Switch Controller</Text>
+            <Text style={styles.title}>Light Switch & Battery</Text>
 
+            {/* Switch Section */}
             <View style={styles.statusContainer}>
-              <Text style={styles.statusLabel}>Current Status:</Text>
+              <Text style={styles.statusLabel}>Switch Status:</Text>
               {loading ? (
                 <ActivityIndicator size="small" color="#606770" />
               ) : (
@@ -100,9 +129,30 @@ export default function App() {
                 ios_backgroundColor="#ccc"
                 onValueChange={toggleSwitch}
                 value={isEnabled}
-                style={{ transform: [{ scaleX: 1.5 }, { scaleY: 1.5 }] }} // 모바일 앱 맞춤 크기 조절
+                style={{ transform: [{ scaleX: 1.5 }, { scaleY: 1.5 }] }}
               />
             </View>
+            
+            <View style={styles.divider} />
+
+            {/* Battery Section */}
+            <Text style={styles.sectionTitle}>Battery Info</Text>
+            {batteryLoading ? (
+                 <ActivityIndicator size="small" color="#606770" />
+            ) : batteryStatus ? (
+                <>
+                    <View style={styles.statusContainer}>
+                        <Text style={styles.statusLabel}>Level:</Text>
+                        <Text style={[styles.statusValue, { color: getBatteryTextColor(batteryStatus.level) }]}>{batteryStatus.level}%</Text>
+                    </View>
+                    <View style={styles.statusContainer}>
+                        <Text style={styles.statusLabel}>Voltage:</Text>
+                        <Text style={[styles.statusValue, { color: getBatteryTextColor(batteryStatus.level) }]}>{batteryStatus.voltage.toFixed(2)}V</Text>
+                    </View>
+                </>
+            ) : (
+                 <Text style={styles.errorText}>Could not load battery status.</Text>
+            )}
           </View>
         </View>
       </TouchableWithoutFeedback>
@@ -120,7 +170,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: "white",
-    padding: 40,
+    padding: 30,
     borderRadius: 20,
     width: "90%",
     alignItems: "center",
@@ -128,7 +178,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
-    elevation: 5, // 안드로이드 그림자
+    elevation: 5,
   },
   title: {
     fontSize: 24,
@@ -136,6 +186,13 @@ const styles = StyleSheet.create({
     color: "#1c1e21",
     marginTop: 20,
     marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#1c1e21",
+    marginTop: 15,
+    marginBottom: 10,
   },
   statusContainer: {
     flexDirection: "row",
@@ -146,5 +203,12 @@ const styles = StyleSheet.create({
   statusValue: { fontSize: 18, fontWeight: "600" },
   onText: { color: "#3678f4" },
   offText: { color: "#f44336" },
+  errorText: { fontSize: 16, color: 'red'},
   switchWrapper: { margin: 5 },
+  divider: {
+      height: 1,
+      width: '80%',
+      backgroundColor: '#e0e0e0',
+      marginVertical: 20,
+  }
 });
