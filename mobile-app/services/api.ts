@@ -30,6 +30,10 @@ const apiClient = {
   getBatteryStatus() {
     return this.request('/battery');
   },
+
+  getTemperature() {
+    return this.request('/temperature');
+  },
 };
 
 export default apiClient;
