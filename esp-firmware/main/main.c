@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "driver/adc.h"
 #include "driver/ledc.h"
+#include "esp_adc_cal.h"
 #include "esp_event.h"
 #include "esp_http_server.h"
 #include "esp_log.h"
@@ -11,8 +13,31 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "nvs_flash.h"
+#include "secrets.h"
 
 static const char* TAG = "SERVO_WEB_CONTROL";
+
+// ADC 설정
+#define ADC_CHANNEL ADC1_CHANNEL_6  // GPIO 34
+#define DEFAULT_VREF \
+  1100  // Use adc2_vref_to_gpio() to get value on ADC2_CHANNEL2
+#define NO_OF_SAMPLES 64           // Multisampling
+#define VOLTAGE_DIVIDER_RATIO 2.0  // 10k + 10k voltage divider, so ratio is 2
+
+static esp_adc_cal_characteristics_t* adc_chars;
+static const adc_unit_t unit = ADC_UNIT_1;
+static const adc_atten_t atten = ADC_ATTEN_DB_11;
+
+// 배터리 전압 읽기 함수 프로토타입
+typedef struct {
+  int percentage;
+  float voltage;
+  uint32_t adc_reading;
+  float min_v;
+  float max_v;
+} battery_stats_t;
+
+battery_stats_t get_battery_stats();
 
 // 설정
 #define SERVO_PIN 14
@@ -101,6 +126,64 @@ esp_err_t root_handler(httpd_req_t* req) {
 
 httpd_handle_t server = NULL;
 
+// ADC 설정
+void configure_adc() {
+  adc1_config_width(ADC_WIDTH_BIT_12);
+  adc1_config_channel_atten(ADC_CHANNEL, atten);
+  adc_chars = calloc(1, sizeof(esp_adc_cal_characteristics_t));
+  esp_adc_cal_characterize(unit, atten, ADC_WIDTH_BIT_12, DEFAULT_VREF,
+                           adc_chars);
+}
+
+// 배터리 잔량(%) 및 전압 반환
+battery_stats_t get_battery_stats() {
+  uint32_t adc_reading = 0;
+  for (int i = 0; i < NO_OF_SAMPLES; i++) {
+    adc_reading += adc1_get_raw(ADC_CHANNEL);
+  }
+  adc_reading /= NO_OF_SAMPLES;
+
+  uint32_t voltage_mv = esp_adc_cal_raw_to_voltage(adc_reading, adc_chars);
+  float battery_voltage = (float)voltage_mv * VOLTAGE_DIVIDER_RATIO / 1000.0f;
+
+  // 3.7V LiPo 배터리 전압 범위 (3.2V ~ 4.2V)
+  float min_v = 3.2f;
+  float max_v = 4.2f;
+
+  int percentage = (int)((battery_voltage - min_v) / (max_v - min_v) * 100.0f);
+
+  if (percentage < 0) {
+    percentage = 0;
+  }
+  if (percentage > 100) {
+    percentage = 100;
+  }
+  ESP_LOGI(TAG,
+           "Raw ADC: %ld, Voltage: %ldmV, Battery: %.2fV, Percentage: %d%%",
+           adc_reading, voltage_mv, battery_voltage, percentage);
+
+  battery_stats_t stats = {.percentage = percentage,
+                           .voltage = battery_voltage,
+                           .adc_reading = adc_reading,
+                           .min_v = min_v,
+                           .max_v = max_v};
+  return stats;
+}
+
+// 배터리 핸들러
+esp_err_t battery_handler(httpd_req_t* req) {
+  battery_stats_t battery_stats = get_battery_stats();
+  char resp[256];
+  sprintf(resp,
+          "{\"level\": %d, \"voltage\": %.2f, \"adc\": %ld, \"min_v\": %.2f, "
+          "\"max_v\": %.2f}",
+          battery_stats.percentage, battery_stats.voltage,
+          battery_stats.adc_reading, battery_stats.min_v, battery_stats.max_v);
+  httpd_resp_set_type(req, "application/json");
+  httpd_resp_send(req, resp, strlen(resp));
+  return ESP_OK;
+}
+
 // 웹 서버 시작
 void start_webserver() {
   if (server) {
@@ -121,6 +204,9 @@ void start_webserver() {
     httpd_uri_t status = {
         .uri = "/status", .method = HTTP_GET, .handler = status_handler};
     httpd_register_uri_handler(server, &status);
+    httpd_uri_t battery = {
+        .uri = "/battery", .method = HTTP_GET, .handler = battery_handler};
+    httpd_register_uri_handler(server, &battery);
   }
 }
 
@@ -140,7 +226,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     if (is_on) {
       ESP_LOGI(TAG, "Servo was ON, setting to OFF due to Wi-Fi disconnection.");
       is_on = false;
-      set_servo_angle(SERVO_45_DEGREE_DUTY); // OFF 상태로 변경
+      set_servo_angle(SERVO_45_DEGREE_DUTY);  // OFF 상태로 변경
     }
     esp_wifi_connect();
   } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
@@ -180,6 +266,10 @@ void app_main(void) {
   configure_servo();
   ESP_LOGI(TAG, "Servo configured.");
 
+  // ADC 설정
+  configure_adc();
+  ESP_LOGI(TAG, "ADC configured.");
+
   // 와이파이 초기화
   ESP_LOGI(TAG, "Initializing WiFi.");
   ESP_ERROR_CHECK(esp_netif_init());
@@ -196,8 +286,8 @@ void app_main(void) {
   wifi_config_t wifi_config = {
       .sta =
           {
-              .ssid = CONFIG_WIFI_SSID,
-              .password = CONFIG_WIFI_PASSWORD,
+              .ssid = WIFI_SSID,
+              .password = WIFI_PASSWORD,
           },
   };
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
