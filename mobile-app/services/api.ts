@@ -1,4 +1,4 @@
-const SERVER_URL = "http://172.30.1.96";
+const SERVER_URL = "http://172.30.1.244";
 
 const apiClient = {
   async request(endpoint: string, options?: RequestInit) {
@@ -7,7 +7,10 @@ const apiClient = {
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error(`API Error: ${response.status} ${response.statusText}`, errorBody);
+      console.error(
+        `API Error: ${response.status} ${response.statusText}`,
+        errorBody,
+      );
       throw new Error(`Request failed with status ${response.status}`);
     }
 
@@ -20,19 +23,19 @@ const apiClient = {
   },
 
   getStatus() {
-    return this.request('/status');
+    return this.request("/status");
   },
 
   toggleSwitch() {
-    return this.request('/toggle');
+    return this.request("/toggle");
   },
 
   getBatteryStatus() {
-    return this.request('/battery');
+    return this.request("/battery");
   },
 
   getTemperature() {
-    return this.request('/temperature');
+    return this.request("/temperature");
   },
 };
 

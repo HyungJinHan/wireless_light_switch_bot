@@ -2,17 +2,17 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "battery_monitor.h"
 #include "esp_event.h"
 #include "esp_http_server.h"
 #include "esp_log.h"
 #include "esp_wifi.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "lwip/ip4_addr.h"
+#include "motor_control.h"
 #include "nvs_flash.h"
 #include "secrets.h"
-
-#include "battery_monitor.h"
-#include "motor_control.h"
 #include "temperature_sensor.h"
 
 static const char* TAG = "SERVO_WEB_CONTROL";
@@ -98,7 +98,8 @@ void start_webserver() {
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
   if (httpd_start(&server, &config) == ESP_OK) {
-    httpd_uri_t root = {.uri = "/", .method = HTTP_GET, .handler = root_handler};
+    httpd_uri_t root = {
+        .uri = "/", .method = HTTP_GET, .handler = root_handler};
     httpd_register_uri_handler(server, &root);
     httpd_uri_t style_css = {
         .uri = "/style.css", .method = HTTP_GET, .handler = style_css_handler};
@@ -165,7 +166,17 @@ void app_main(void) {
   ESP_LOGI(TAG, "Initializing WiFi.");
   ESP_ERROR_CHECK(esp_netif_init());
   ESP_ERROR_CHECK(esp_event_loop_create_default());
-  esp_netif_create_default_wifi_sta();
+  esp_netif_t* esp_netif = esp_netif_create_default_wifi_sta();
+
+  // 사용자 환경에 맞게 고정 IP 설정 (필수!)
+  esp_netif_ip_info_t static_ip_config;
+  IP4_ADDR(&static_ip_config.ip, 172, 30, 1, 500);  // ESP 보드에 할당할 고정 IP
+  IP4_ADDR(&static_ip_config.gw, 172, 30, 1, 1);    // 라우터 (게이트웨이) IP
+  IP4_ADDR(&static_ip_config.netmask, 255, 255, 255, 0);  // 서브넷 마스크
+
+  ESP_ERROR_CHECK(esp_netif_dhcpc_stop(esp_netif));  // DHCP 클라이언트 중지
+  ESP_ERROR_CHECK(
+      esp_netif_set_ip_info(esp_netif, &static_ip_config));  // 고정 IP 설정
   wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
   ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 

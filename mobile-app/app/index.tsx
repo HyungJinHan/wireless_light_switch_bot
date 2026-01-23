@@ -1,3 +1,4 @@
+import BatteryStatusBar from "@/components/battery-status-bar"; // Import the new component
 import { LightBlink } from "@/components/light-blink";
 import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useEffect, useState } from "react";
@@ -35,16 +36,6 @@ export default function App() {
     useState<TemperatureStatus | null>(null);
   const [temperatureLoading, setTemperatureLoading] = useState(true);
   const colorScheme = useColorScheme();
-
-  const getBatteryTextColor = (level: number) => {
-    if (level > 50) {
-      return "green";
-    } else if (level >= 20) {
-      return "orange";
-    } else {
-      return "red";
-    }
-  };
 
   const getVoltageTextColor = (voltage: number) => {
     if (voltage > 3.7) {
@@ -123,6 +114,7 @@ export default function App() {
   useFocusEffect(
     useCallback(() => {
       fetchAllData();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []),
   );
 
@@ -183,18 +175,12 @@ export default function App() {
 
             {/* Battery Section */}
             <Text style={styles.sectionTitle}>Battery Info</Text>
-            <View style={styles.statusContainer}>
-              <Text style={styles.statusLabel}>Level:</Text>
+            <View style={styles.batteryStatusRow}>
+              {/* New style for battery row */}
               {batteryLoading ? (
                 <ActivityIndicator size="small" color="#606770" />
               ) : batteryStatus ? (
-                <Text
-                  style={[
-                    styles.statusValue,
-                    { color: getBatteryTextColor(batteryStatus.level) },
-                  ]}>
-                  {batteryStatus.level}%
-                </Text>
+                <BatteryStatusBar level={batteryStatus.level} />
               ) : (
                 <Text style={styles.errorText}>Error</Text>
               )}
@@ -221,7 +207,7 @@ export default function App() {
             {/* Temperature Section */}
             <Text style={styles.sectionTitle}>Temperature Info</Text>
             <View style={styles.statusContainer}>
-              <Text style={styles.statusLabel}>Current Temperature:</Text>
+              <Text style={styles.statusLabel}>Current Temp:</Text>
               {temperatureLoading ? (
                 <ActivityIndicator size="small" color="#606770" />
               ) : temperatureStatus ? (
@@ -277,6 +263,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 10,
+  },
+  batteryStatusRow: {
+    // New style for the battery level display
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+    // Adjust padding/margin if needed to align with other elements
   },
   statusLabel: { fontSize: 18, color: "#606770", marginRight: 8 },
   statusValue: { fontSize: 18, fontWeight: "600" },

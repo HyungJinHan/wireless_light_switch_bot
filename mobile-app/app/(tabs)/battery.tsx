@@ -4,6 +4,7 @@ import { ThemedView } from "@/components/themed-view";
 import { StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { useEffect, useState } from "react";
 import apiClient from "../../services/api"; // Correct relative path
+import BatteryStatusBar from "@/components/battery-status-bar"; // Import the new component
 
 interface BatteryStatus {
   level: number;
@@ -58,8 +59,8 @@ export default function BatteryScreen() {
 
       {batteryStatus && !loading && !error && (
         <ThemedView style={styles.infoContainer}>
-          <ThemedText type="defaultSemiBold" style={styles.label}>Level:</ThemedText>
-          <ThemedText style={styles.value}>{batteryStatus.level}%</ThemedText>
+          <ThemedText type="defaultSemiBold" style={styles.label}>Battery Level:</ThemedText>
+          <BatteryStatusBar level={batteryStatus.level} />
 
           <ThemedText type="defaultSemiBold" style={styles.label}>Voltage:</ThemedText>
           <ThemedText style={styles.value}>{batteryStatus.voltage.toFixed(2)}V</ThemedText>
