@@ -168,8 +168,8 @@ void app_main(void) {
   ESP_ERROR_CHECK(esp_event_loop_create_default());
   esp_netif_t* esp_netif = esp_netif_create_default_wifi_sta();
 
-  /* 사용자 환경에 맞게 고정 IP 설정 (필수!)
-  esp_netif_ip_info_t static_ip_config;
+  // 사용자 환경에 맞게 고정 IP 설정(필수 !)
+  /* esp_netif_ip_info_t static_ip_config;
   IP4_ADDR(&static_ip_config.ip, 172, 30, 1, 200);  // ESP 보드에 할당할 고정 IP
   IP4_ADDR(&static_ip_config.gw, 172, 30, 1, 1);    // 라우터 (게이트웨이) IP
   IP4_ADDR(&static_ip_config.netmask, 255, 255, 255, 0);  // 서브넷 마스크
@@ -177,8 +177,14 @@ void app_main(void) {
   ESP_ERROR_CHECK(esp_netif_dhcpc_stop(esp_netif));  // DHCP 클라이언트 중지
   ESP_ERROR_CHECK(
       esp_netif_set_ip_info(esp_netif, &static_ip_config));  // 고정 IP 설정 */
+
   wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
   ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
+  uint8_t mac[6];
+  ESP_ERROR_CHECK(esp_wifi_get_mac(WIFI_IF_STA, mac));
+  ESP_LOGI(TAG, "MAC address: %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1],
+           mac[2], mac[3], mac[4], mac[5]);
 
   ESP_ERROR_CHECK(esp_event_handler_instance_register(
       WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL, NULL));

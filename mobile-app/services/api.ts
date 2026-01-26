@@ -1,4 +1,4 @@
-const SERVER_URL = "http://172.30.1.244";
+const SERVER_URL = "http://172.30.1.200";
 
 const apiClient = {
   async request(endpoint: string, options?: RequestInit) {
