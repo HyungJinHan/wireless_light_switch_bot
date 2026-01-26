@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     height: "100%",
-    backgroundColor: "white", // This should match the background of the parent card/view
+    backgroundColor: "#f0f0f0", // This should match the background of the parent card/view
   },
   percentageText: {
     fontSize: 18,
