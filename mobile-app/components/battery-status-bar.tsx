@@ -17,8 +17,8 @@ export default function BatteryStatusBar({ level }: BatteryStatusBarProps) {
       <View style={styles.batteryOutline}>
         {/* Full-width gradient as the background */}
         <LinearGradient
-          colors={["#FF4C4C", "#ffbf00", "#4CAF50"]} // Red, Gold/Yellow, Green
-          locations={[0, 0.3, 1]} // Red at 0%, Yellow at 30%, Green at 100%
+          colors={["#FF4C4C", "#ffbf00", "#4CAF50"]} // Red, Orange, Green
+          locations={[0, 0.3, 1]} // Red at 0%, Orange at 30%, Green at 100%
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
           style={styles.fullGradientBar}
@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
     width: 130, // Fixed width for the battery bar
     height: 20,
     borderWidth: 1,
-    borderColor: "#a9a9a9",
+    borderColor: "#e8e8e8",
     borderRadius: 5,
     overflow: "hidden", // Ensures the gradient and overlay are clipped
     marginRight: 10,
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     height: "100%",
-    backgroundColor: "#f0f0f0", // This should match the background of the parent card/view
+    backgroundColor: "#e8e8e8", // This should match the background of the parent card/view
   },
   percentageText: {
     fontSize: 18,
