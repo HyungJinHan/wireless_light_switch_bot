@@ -95,8 +95,8 @@ void start_webserver() {
   if (server) {
     return;
   }
-  httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-
+      httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+      config.server_port = 8080;
   if (httpd_start(&server, &config) == ESP_OK) {
     httpd_uri_t root = {
         .uri = "/", .method = HTTP_GET, .handler = root_handler};
@@ -127,7 +127,10 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     esp_wifi_connect();
   } else if (event_base == WIFI_EVENT &&
              event_id == WIFI_EVENT_STA_DISCONNECTED) {
-    ESP_LOGI(TAG, "Wi-Fi disconnected, trying to reconnect...");
+    wifi_event_sta_disconnected_t* disconnected =
+        (wifi_event_sta_disconnected_t*)event_data;
+    ESP_LOGI(TAG, "Wi-Fi disconnected, reason: %d, trying to reconnect...",
+             disconnected->reason);
     if (server) {
       httpd_stop(server);
       server = NULL;
@@ -145,7 +148,8 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 }
 
 void app_main(void) {
-  esp_log_level_set(TAG, ESP_LOG_INFO);
+  esp_log_level_set(TAG, ESP_LOG_VERBOSE);
+  esp_log_level_set("wifi", ESP_LOG_VERBOSE);
   ESP_LOGI(TAG, "app_main started");
   // NVS 초기화
   esp_err_t ret = nvs_flash_init();
@@ -164,19 +168,22 @@ void app_main(void) {
 
   // 와이파이 초기화
   ESP_LOGI(TAG, "Initializing WiFi.");
+  esp_log_level_set("wifi",
+                    ESP_LOG_VERBOSE);       // Ensure verbose logging for wifi
+  esp_log_level_set(TAG, ESP_LOG_VERBOSE);  // Ensure verbose logging for TAG
   ESP_ERROR_CHECK(esp_netif_init());
   ESP_ERROR_CHECK(esp_event_loop_create_default());
   esp_netif_t* esp_netif = esp_netif_create_default_wifi_sta();
 
   // 사용자 환경에 맞게 고정 IP 설정(필수 !)
-  /* esp_netif_ip_info_t static_ip_config;
-  IP4_ADDR(&static_ip_config.ip, 172, 30, 1, 200);  // ESP 보드에 할당할 고정 IP
-  IP4_ADDR(&static_ip_config.gw, 172, 30, 1, 1);    // 라우터 (게이트웨이) IP
+  esp_netif_ip_info_t static_ip_config;
+  IP4_ADDR(&static_ip_config.ip, 172, 30, 1, 50);  // ESP 보드에 할당할 고정 IP
+  IP4_ADDR(&static_ip_config.gw, 172, 30, 1, 1);   // 라우터 (게이트웨이) IP
   IP4_ADDR(&static_ip_config.netmask, 255, 255, 255, 0);  // 서브넷 마스크
 
   ESP_ERROR_CHECK(esp_netif_dhcpc_stop(esp_netif));  // DHCP 클라이언트 중지
   ESP_ERROR_CHECK(
-      esp_netif_set_ip_info(esp_netif, &static_ip_config));  // 고정 IP 설정 */
+      esp_netif_set_ip_info(esp_netif, &static_ip_config));  // 고정 IP 설정
 
   wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
   ESP_ERROR_CHECK(esp_wifi_init(&cfg));

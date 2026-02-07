@@ -1,4 +1,5 @@
-const SERVER_URL = "http://172.30.1.200";
+// const SERVER_URL = "http://61.84.226.152:18080";
+const SERVER_URL = "http://hhj.ddns.net:18080";
 
 const apiClient = {
   async request(endpoint: string, options?: RequestInit) {
