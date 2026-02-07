@@ -95,8 +95,8 @@ void start_webserver() {
   if (server) {
     return;
   }
-      httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-      config.server_port = 8080;
+  httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+  config.server_port = 8080;
   if (httpd_start(&server, &config) == ESP_OK) {
     httpd_uri_t root = {
         .uri = "/", .method = HTTP_GET, .handler = root_handler};
@@ -177,8 +177,8 @@ void app_main(void) {
 
   // 사용자 환경에 맞게 고정 IP 설정(필수 !)
   esp_netif_ip_info_t static_ip_config;
-  IP4_ADDR(&static_ip_config.ip, 172, 30, 1, 50);  // ESP 보드에 할당할 고정 IP
-  IP4_ADDR(&static_ip_config.gw, 172, 30, 1, 1);   // 라우터 (게이트웨이) IP
+  IP4_ADDR(&static_ip_config.ip, 172, 30, 1, 50);   // ESP 보드에 할당할 고정 IP
+  IP4_ADDR(&static_ip_config.gw, 172, 30, 1, 254);  // 라우터 (게이트웨이) IP
   IP4_ADDR(&static_ip_config.netmask, 255, 255, 255, 0);  // 서브넷 마스크
 
   ESP_ERROR_CHECK(esp_netif_dhcpc_stop(esp_netif));  // DHCP 클라이언트 중지
