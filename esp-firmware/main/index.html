@@ -14,6 +14,7 @@
           >...</span
         >V)
       </h2>
+      <h2>Temperature: <span id="temperature">Loading...</span> &deg;C</h2>
       <h2>Raw ADC: <span id="battery-adc">Loading...</span></h2>
       <h2>
         Voltage Range:
@@ -35,6 +36,7 @@
       const minVSpan = document.getElementById("battery-min-v");
       const maxVSpan = document.getElementById("battery-max-v");
       const toggleCheckbox = document.getElementById("toggle-checkbox");
+      const temperatureSpan = document.getElementById("temperature");
 
       function updateStatus() {
         fetch("/status")
@@ -88,6 +90,23 @@
           });
       }
 
+      function updateTemperature() {
+        fetch("/temperature")
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then((data) => {
+            temperatureSpan.innerText = data.temperature.toFixed(2);
+          })
+          .catch((error) => {
+            console.error("Could not fetch temperature:", error);
+            temperatureSpan.innerText = "연결 실패";
+          });
+      }
+
       function toggleSwitch() {
         // 'change' 이벤트로 인해 체크박스 상태는 이미 낙관적으로 변경되었습니다.
         // 따라서, `!toggleCheckbox.checked`는 클릭 이전의 원래 상태를 나타냅니다.
@@ -112,9 +131,12 @@
       // 페이지 로드 시 상태 가져오기
       updateStatus();
       updateBatteryLevel();
+      updateTemperature();
 
       // 30초마다 배터리 잔량 업데이트
       setInterval(updateBatteryLevel, 30000);
+      // 5초마다 온도 업데이트
+      setInterval(updateTemperature, 5000);
     </script>
   </body>
 </html>

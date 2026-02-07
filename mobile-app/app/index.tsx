@@ -1,6 +1,7 @@
+import BatteryStatusBar from "@/components/battery-status-bar"; // Import the new component
 import { LightBlink } from "@/components/light-blink";
 import { useFocusEffect } from "@react-navigation/native";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -19,18 +20,27 @@ interface BatteryStatus {
   voltage: number;
 }
 
+interface TemperatureStatus {
+  temperature: number;
+}
+
 export default function App() {
   const [isEnabled, setIsEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [statusText, setStatusText] = useState("Loading...");
-  const [batteryStatus, setBatteryStatus] = useState<BatteryStatus | null>(null);
+  const [batteryStatus, setBatteryStatus] = useState<BatteryStatus | null>(
+    null,
+  );
   const [batteryLoading, setBatteryLoading] = useState(true);
+  const [temperatureStatus, setTemperatureStatus] =
+    useState<TemperatureStatus | null>(null);
+  const [temperatureLoading, setTemperatureLoading] = useState(true);
   const colorScheme = useColorScheme();
 
-  const getBatteryTextColor = (level: number) => {
-    if (level > 50) {
+  const getVoltageTextColor = (voltage: number) => {
+    if (voltage > 3.7) {
       return "green";
-    } else if (level >= 20) {
+    } else if (voltage >= 3.2) {
       return "orange";
     } else {
       return "red";
@@ -38,6 +48,7 @@ export default function App() {
   };
 
   const fetchSwitchStatus = async () => {
+    setLoading(true); // Start loading for switch
     try {
       const data = await apiClient.getStatus();
       setIsEnabled(data.status === "ON");
@@ -45,27 +56,44 @@ export default function App() {
     } catch (error) {
       console.error(error);
       setStatusText("연결 실패");
+    } finally {
+      setLoading(false); // End loading for switch
     }
   };
-  
+
   const fetchBatteryStatus = async () => {
+    setBatteryLoading(true); // Start loading for battery
     try {
-        const data = await apiClient.getBatteryStatus();
-        setBatteryStatus(data);
+      const data = await apiClient.getBatteryStatus();
+      setBatteryStatus(data);
     } catch (err) {
       console.error("Failed to fetch battery status:", err);
-      // Don't show an alert for battery, just log it.
       setBatteryStatus(null);
+    } finally {
+      setBatteryLoading(false); // End loading for battery
     }
-  }
+  };
+
+  const fetchTemperatureStatus = async () => {
+    setTemperatureLoading(true);
+    try {
+      const data = await apiClient.getTemperature();
+      setTemperatureStatus(data);
+    } catch (err) {
+      console.error("Failed to fetch temperature status:", err);
+      setTemperatureStatus(null);
+    } finally {
+      setTemperatureLoading(false);
+    }
+  };
 
   const fetchAllData = async () => {
-    setLoading(true);
-    setBatteryLoading(true);
-    await Promise.all([fetchSwitchStatus(), fetchBatteryStatus()]);
-    setLoading(false);
-    setBatteryLoading(false);
-  }
+    await Promise.all([
+      fetchSwitchStatus(),
+      fetchBatteryStatus(),
+      fetchTemperatureStatus(),
+    ]);
+  };
 
   const toggleSwitch = async () => {
     const originalState = isEnabled;
@@ -86,11 +114,21 @@ export default function App() {
   useFocusEffect(
     useCallback(() => {
       fetchAllData();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []),
   );
 
-  const handleTouch = () => {
-    fetchAllData();
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      fetchTemperatureStatus();
+    }, 10000); // Poll every 10 seconds
+
+    return () => clearInterval(intervalId); // Cleanup on unmount
+  }, []);
+
+  const handleTouch = async () => {
+    // Manually refresh switch and battery data only
+    await Promise.all([fetchSwitchStatus(), fetchBatteryStatus()]);
   };
 
   return (
@@ -104,7 +142,7 @@ export default function App() {
           <View style={styles.card}>
             <LightBlink />
 
-            <Text style={styles.title}>Light Switch & Battery</Text>
+            <Text style={styles.title}>Light Switch & Sensors</Text>
 
             {/* Switch Section */}
             <View style={styles.statusContainer}>
@@ -132,27 +170,54 @@ export default function App() {
                 style={{ transform: [{ scaleX: 1.5 }, { scaleY: 1.5 }] }}
               />
             </View>
-            
+
             <View style={styles.divider} />
 
             {/* Battery Section */}
             <Text style={styles.sectionTitle}>Battery Info</Text>
-            {batteryLoading ? (
-                 <ActivityIndicator size="small" color="#606770" />
-            ) : batteryStatus ? (
-                <>
-                    <View style={styles.statusContainer}>
-                        <Text style={styles.statusLabel}>Level:</Text>
-                        <Text style={[styles.statusValue, { color: getBatteryTextColor(batteryStatus.level) }]}>{batteryStatus.level}%</Text>
-                    </View>
-                    <View style={styles.statusContainer}>
-                        <Text style={styles.statusLabel}>Voltage:</Text>
-                        <Text style={[styles.statusValue, { color: getBatteryTextColor(batteryStatus.level) }]}>{batteryStatus.voltage.toFixed(2)}V</Text>
-                    </View>
-                </>
-            ) : (
-                 <Text style={styles.errorText}>Could not load battery status.</Text>
-            )}
+            <View style={styles.batteryStatusRow}>
+              {/* New style for battery row */}
+              {batteryLoading ? (
+                <ActivityIndicator size="small" color="#606770" />
+              ) : batteryStatus ? (
+                <BatteryStatusBar level={batteryStatus.level} />
+              ) : (
+                <Text style={styles.errorText}>Error</Text>
+              )}
+            </View>
+            <View style={styles.statusContainer}>
+              <Text style={styles.statusLabel}>Voltage:</Text>
+              {batteryLoading ? (
+                <ActivityIndicator size="small" color="#606770" />
+              ) : batteryStatus ? (
+                <Text
+                  style={[
+                    styles.statusValue,
+                    { color: getVoltageTextColor(batteryStatus.voltage) },
+                  ]}>
+                  {batteryStatus.voltage.toFixed(2)}V
+                </Text>
+              ) : (
+                <Text style={styles.errorText}>Error</Text>
+              )}
+            </View>
+
+            <View style={styles.divider} />
+
+            {/* Temperature Section */}
+            <Text style={styles.sectionTitle}>Temperature Info</Text>
+            <View style={styles.statusContainer}>
+              <Text style={styles.statusLabel}>Current Temp:</Text>
+              {temperatureLoading ? (
+                <ActivityIndicator size="small" color="#606770" />
+              ) : temperatureStatus ? (
+                <Text style={styles.statusValue}>
+                  {temperatureStatus.temperature.toFixed(2)}°C
+                </Text>
+              ) : (
+                <Text style={styles.errorText}>Error</Text>
+              )}
+            </View>
           </View>
         </View>
       </TouchableWithoutFeedback>
@@ -199,16 +264,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 10,
   },
+  batteryStatusRow: {
+    // New style for the battery level display
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+    // Adjust padding/margin if needed to align with other elements
+  },
   statusLabel: { fontSize: 18, color: "#606770", marginRight: 8 },
   statusValue: { fontSize: 18, fontWeight: "600" },
   onText: { color: "#3678f4" },
   offText: { color: "#f44336" },
-  errorText: { fontSize: 16, color: 'red'},
+  errorText: { fontSize: 16, color: "red" },
   switchWrapper: { margin: 5 },
   divider: {
-      height: 1,
-      width: '80%',
-      backgroundColor: '#e0e0e0',
-      marginVertical: 20,
-  }
+    height: 1,
+    width: "80%",
+    backgroundColor: "#e0e0e0",
+    marginVertical: 20,
+  },
 });
