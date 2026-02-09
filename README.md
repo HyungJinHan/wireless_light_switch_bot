@@ -1,8 +1,6 @@
 # 무선 라이트 스위치 봇
 
-<div style="background-color: white; width: 80px; height: 80px; padding: 5px; border-radius: 10px; margin-bottom: 20px;">
-    <img src="./docs/icon.png" alt="icon"/>
-</div>
+<img src="./docs/icon.png" alt="icon" width="80px" height="80px"/>
 
 물리적인 스위치를 원격으로 제어하는 ESP32 기반 로봇과 이를 관리하기 위한 모바일 애플리케이션입니다.
 
