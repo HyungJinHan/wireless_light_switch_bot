@@ -1,5 +1,9 @@
 # 무선 라이트 스위치 봇
 
+<div style="background-color: white; width: 80px; height: 80px; padding: 5px; border-radius: 10px; margin-bottom: 20px;">
+    <img src="./docs/icon.png" alt="icon"/>
+</div>
+
 물리적인 스위치를 원격으로 제어하는 ESP32 기반 로봇과 이를 관리하기 위한 모바일 애플리케이션입니다.
 
 ## 주요 기능
@@ -53,6 +57,8 @@
 
 ### 2. 모바일 앱 (Mobile App)
 
+<img src="./docs/mobile.jpeg" alt="icon" width="300px" style="border-radius: 20px; margin-bottom: 20px;" />
+
 1.  `mobile-app/` 디렉토리로 이동합니다.
 2.  의존성을 설치하고 앱을 시작합니다.
     ```bash
@@ -65,8 +71,8 @@
 ## 향후 개선 및 계획
 
 - **원격 제어 강화 (DDNS 적용)**
-  1.  펌웨어에 고정 IP 주소 설정 기능 추가 및 활성화
-  2.  공유기에서 ESP32의 고정 IP로 포트 포워딩 설정
-  3.  DDNS 서비스 가입 및 공유기에 설정하여 도메인 연결
-  4.  모바일 앱에서 연결 주소를 DDNS 도메인으로 변경
+  1.  ~~펌웨어에 고정 IP 주소 설정 기능 추가 및 활성화~~
+  2.  ~~공유기에서 ESP32의 고정 IP로 포트 포워딩 설정~~
+  3.  ~~DDNS 서비스 가입 및 공유기에 설정하여 도메인 연결~~
+  4.  ~~모바일 앱에서 연결 주소를 DDNS 도메인으로 변경~~
   5.  (선택) API 키 또는 간단한 인증을 추가하여 기본 보안 강화
