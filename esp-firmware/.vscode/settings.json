@@ -15,5 +15,7 @@
     "--compile-commands-dir=/Users/odnhhj/Desktop/Repository/wireless_light_switch_bot/build"
   ],
   "idf.flashType": "UART",
-  "C_Cpp.errorSquiggles": "disabled"
+  "C_Cpp.errorSquiggles": "disabled",
+  "idf.currentSetup": "C:/Espressif/frameworks/esp-idf-v5.5.2/",
+  "idf.portWin": "COM6"
 }

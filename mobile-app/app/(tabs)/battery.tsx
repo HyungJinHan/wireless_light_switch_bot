@@ -1,112 +1,120 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import ParallaxScrollView from "@/components/parallax-scroll-view";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { StyleSheet, ActivityIndicator, Alert } from "react-native";
+import { useEffect, useState } from "react";
+import apiClient from "../../services/api"; // Correct relative path
+import BatteryStatusBar from "@/components/battery-status-bar"; // Import the new component
 
-import { Collapsible } from '@/components/ui/collapsible';
-import { ExternalLink } from '@/components/external-link';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Fonts } from '@/constants/theme';
+interface BatteryStatus {
+  level: number;
+  voltage: number;
+}
 
-export default function TabTwoScreen() {
+export default function BatteryScreen() {
+  const [batteryStatus, setBatteryStatus] = useState<BatteryStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchBatteryStatus = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await apiClient.getBatteryStatus();
+      setBatteryStatus(data);
+    } catch (err) {
+      console.error("Failed to fetch battery status:", err);
+      setError("Failed to fetch battery status.");
+      Alert.alert("Error", "Failed to fetch battery status. Please check the connection.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBatteryStatus();
+  }, []);
+
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
+      headerBackgroundColor={{ light: "#D0D0D0", dark: "#353636" }}
+      headerImage={<ThemedText type="title" style={styles.headerTitle}>Battery Status</ThemedText>}
+    >
       <ThemedView style={styles.titleContainer}>
-        <ThemedText
-          type="title"
-          style={{
-            fontFamily: Fonts.rounded,
-          }}>
-          Explore
-        </ThemedText>
+        <ThemedText type="title">Battery Information</ThemedText>
       </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image
-          source={require('@/assets/images/react-logo.png')}
-          style={{ width: 100, height: 100, alignSelf: 'center' }}
-        />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful{' '}
-          <ThemedText type="defaultSemiBold" style={{ fontFamily: Fonts.mono }}>
-            react-native-reanimated
-          </ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
+
+      {loading && (
+        <ThemedView style={styles.statusContainer}>
+          <ActivityIndicator size="large" color="#606770" />
+          <ThemedText style={styles.statusText}>Loading battery status...</ThemedText>
+        </ThemedView>
+      )}
+
+      {error && (
+        <ThemedView style={styles.statusContainer}>
+          <ThemedText style={styles.errorText}>Error: {error}</ThemedText>
+        </ThemedView>
+      )}
+
+      {batteryStatus && !loading && !error && (
+        <ThemedView style={styles.infoContainer}>
+          <ThemedText type="defaultSemiBold" style={styles.label}>Battery Level:</ThemedText>
+          <BatteryStatusBar level={batteryStatus.level} />
+
+          <ThemedText type="defaultSemiBold" style={styles.label}>Voltage:</ThemedText>
+          <ThemedText style={styles.value}>{batteryStatus.voltage.toFixed(2)}V</ThemedText>
+        </ThemedView>
+      )}
     </ParallaxScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  headerTitle: {
+    paddingLeft: 20,
+    fontSize: 30,
+    fontWeight: 'bold',
   },
   titleContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
+    marginBottom: 20,
+  },
+  statusContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+  },
+  statusText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#606770",
+  },
+  errorText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "red",
+  },
+  infoContainer: {
+    padding: 20,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  label: {
+    fontSize: 18,
+    marginBottom: 5,
+    color: "#1c1e21",
+  },
+  value: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    color: "#3678f4",
   },
 });

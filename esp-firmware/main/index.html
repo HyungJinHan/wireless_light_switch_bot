@@ -8,6 +8,19 @@
     <div class="container">
       <h1>Light Switch Bot</h1>
       <h2>Current Status: <span id="status">Loading...</span></h2>
+      <h2>
+        Battery: <span id="battery-level">Loading...</span>% (<span
+          id="battery-voltage"
+          >...</span
+        >V)
+      </h2>
+      <h2>Temperature: <span id="temperature">Loading...</span> &deg;C</h2>
+      <h2>Raw ADC: <span id="battery-adc">Loading...</span></h2>
+      <h2>
+        Voltage Range:
+        <span id="battery-min-v">...</span>V ~
+        <span id="battery-max-v">...</span>V
+      </h2>
 
       <label class="switch">
         <input type="checkbox" id="toggle-checkbox" />
@@ -17,7 +30,13 @@
 
     <script>
       const statusSpan = document.getElementById("status");
+      const batterySpan = document.getElementById("battery-level");
+      const voltageSpan = document.getElementById("battery-voltage");
+      const adcSpan = document.getElementById("battery-adc");
+      const minVSpan = document.getElementById("battery-min-v");
+      const maxVSpan = document.getElementById("battery-max-v");
       const toggleCheckbox = document.getElementById("toggle-checkbox");
+      const temperatureSpan = document.getElementById("temperature");
 
       function updateStatus() {
         fetch("/status")
@@ -35,6 +54,56 @@
             console.error("Could not fetch status:", error);
             statusSpan.innerText = "연결 실패";
             toggleCheckbox.checked = false;
+          });
+      }
+
+      function updateBatteryLevel() {
+        fetch("/battery")
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then((data) => {
+            if (data.level >= 0) {
+              batterySpan.innerText = data.level;
+              voltageSpan.innerText = data.voltage.toFixed(2);
+              adcSpan.innerText = data.adc;
+              minVSpan.innerText = data.min_v.toFixed(2);
+              maxVSpan.innerText = data.max_v.toFixed(2);
+            } else {
+              batterySpan.innerText = "N/A";
+              voltageSpan.innerText = "N/A";
+              adcSpan.innerText = "N/A";
+              minVSpan.innerText = "N/A";
+              maxVSpan.innerText = "N/A";
+            }
+          })
+          .catch((error) => {
+            console.error("Could not fetch battery level:", error);
+            batterySpan.innerText = "연결 실패";
+            voltageSpan.innerText = "연결 실패";
+            adcSpan.innerText = "연결 실패";
+            minVSpan.innerText = "연결 실패";
+            maxVSpan.innerText = "연결 실패";
+          });
+      }
+
+      function updateTemperature() {
+        fetch("/temperature")
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then((data) => {
+            temperatureSpan.innerText = data.temperature.toFixed(2);
+          })
+          .catch((error) => {
+            console.error("Could not fetch temperature:", error);
+            temperatureSpan.innerText = "연결 실패";
           });
       }
 
@@ -61,6 +130,13 @@
 
       // 페이지 로드 시 상태 가져오기
       updateStatus();
+      updateBatteryLevel();
+      updateTemperature();
+
+      // 30초마다 배터리 잔량 업데이트
+      setInterval(updateBatteryLevel, 30000);
+      // 5초마다 온도 업데이트
+      setInterval(updateTemperature, 5000);
     </script>
   </body>
 </html>

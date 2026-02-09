@@ -1,18 +1,18 @@
 import { LightBlink } from "@/components/light-blink";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   StyleSheet,
   Switch,
   Text,
+  TouchableWithoutFeedback,
   useColorScheme,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-// ⚠️ 포트포워딩한 공인 IP 또는 DDNS 주소로 수정하세요.
-const SERVER_URL = "http://172.30.1.92";
+import apiClient from "../../services/api";
 
 export default function App() {
   const [isEnabled, setIsEnabled] = useState(false);
@@ -20,13 +20,10 @@ export default function App() {
   const [statusText, setStatusText] = useState("Loading...");
   const colorScheme = useColorScheme();
 
-  // 1. 서버로부터 현재 상태를 가져오는 함수 (웹의 updateStatus와 동일)
+  // 1. 서버로부터 현재 상태를 가져오는 함수
   const fetchStatus = async () => {
     try {
-      const response = await fetch(`${SERVER_URL}/status`);
-      if (!response.ok) throw new Error();
-      const data = await response.json();
-
+      const data = await apiClient.getStatus();
       setIsEnabled(data.status === "ON");
       setStatusText(data.status);
     } catch (error) {
@@ -37,19 +34,17 @@ export default function App() {
     }
   };
 
-  // 2. 스위치를 토글할 때 실행되는 함수 (웹의 toggleSwitch와 동일)
+  // 2. 스위치를 토글할 때 실행되는 함수
   const toggleSwitch = async () => {
     const originalState = isEnabled;
-    // 낙관적 UI 업데이트 (사용자 경험을 위해 먼저 바꿈)
+    // 낙관적 UI 업데이트
     setIsEnabled(!originalState);
     setStatusText(!originalState ? "ON" : "OFF");
 
     try {
-      const response = await fetch(`${SERVER_URL}/toggle`);
-      if (!response.ok) throw new Error();
-
+      await apiClient.toggleSwitch();
       // 서버 전송 성공 시 실제 상태 동기화
-      fetchStatus();
+      await fetchStatus();
     } catch (error) {
       console.error(error);
       Alert.alert("오류", "스위치 상태 변경에 실패했습니다.");
@@ -59,10 +54,16 @@ export default function App() {
     }
   };
 
-  // 앱 실행 시 최초 1회 상태 확인
-  useEffect(() => {
+  useFocusEffect(
+    useCallback(() => {
+      fetchStatus();
+    }, []),
+  );
+
+  const handleTouch = () => {
+    setLoading(true);
     fetchStatus();
-  }, []);
+  };
 
   return (
     <SafeAreaView
@@ -70,39 +71,41 @@ export default function App() {
         ...styles.safeArea,
         backgroundColor: colorScheme === "dark" ? "#2e2e2e" : "#f0f2f5",
       }}>
-      <View style={styles.container}>
-        <View style={styles.card}>
-          <LightBlink />
+      <TouchableWithoutFeedback onPress={handleTouch}>
+        <View style={styles.container}>
+          <View style={styles.card}>
+            <LightBlink />
 
-          <Text style={styles.title}>Light Switch Controller</Text>
+            <Text style={styles.title}>Light Switch Controller</Text>
 
-          <View style={styles.statusContainer}>
-            <Text style={styles.statusLabel}>Current Status:</Text>
-            {loading ? (
-              <ActivityIndicator size="small" color="#606770" />
-            ) : (
-              <Text
-                style={[
-                  styles.statusValue,
-                  isEnabled ? styles.onText : styles.offText,
-                ]}>
-                {statusText}
-              </Text>
-            )}
-          </View>
+            <View style={styles.statusContainer}>
+              <Text style={styles.statusLabel}>Current Status:</Text>
+              {loading ? (
+                <ActivityIndicator size="small" color="#606770" />
+              ) : (
+                <Text
+                  style={[
+                    styles.statusValue,
+                    isEnabled ? styles.onText : styles.offText,
+                  ]}>
+                  {statusText}
+                </Text>
+              )}
+            </View>
 
-          <View style={styles.switchWrapper}>
-            <Switch
-              trackColor={{ false: "#ccc", true: "#2e2e2e" }}
-              thumbColor={"#ffffff"}
-              ios_backgroundColor="#ccc"
-              onValueChange={toggleSwitch}
-              value={isEnabled}
-              style={{ transform: [{ scaleX: 1.5 }, { scaleY: 1.5 }] }} // 모바일 앱 맞춤 크기 조절
-            />
+            <View style={styles.switchWrapper}>
+              <Switch
+                trackColor={{ false: "#ccc", true: "#2e2e2e" }}
+                thumbColor={"#ffffff"}
+                ios_backgroundColor="#ccc"
+                onValueChange={toggleSwitch}
+                value={isEnabled}
+                style={{ transform: [{ scaleX: 1.5 }, { scaleY: 1.5 }] }} // 모바일 앱 맞춤 크기 조절
+              />
+            </View>
           </View>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 }
